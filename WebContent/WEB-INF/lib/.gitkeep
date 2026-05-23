@@ -1,0 +1,7 @@
+Place sqlite-jdbc-3.7.2.jar here.
+
+Download URL (example):
+  https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.7.2/sqlite-jdbc-3.7.2.jar
+
+After dropping the jar into this folder, refresh the project in your IDE
+(Eclipse: F5 on the project) and the deployment will pick it up.

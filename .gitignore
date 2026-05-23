@@ -1,0 +1,22 @@
+# Compiled classes
+build/
+bin/
+target/
+*.class
+
+# IDE caches
+.idea/
+*.iml
+*.iws
+.vscode/
+
+# Logs
+*.log
+
+# SQLite runtime DB (generated at first run)
+grocery.db
+grocery.db-journal
+
+# OS junk
+.DS_Store
+Thumbs.db

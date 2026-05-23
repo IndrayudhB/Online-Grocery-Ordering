@@ -1,0 +1,52 @@
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%
+    // Block direct access if no session, or if session belongs to admin.
+    Object userType = session == null ? null : session.getAttribute("userType");
+    if (userType == null) {
+        response.sendRedirect(request.getContextPath() + "/login.jsp?expired=1");
+        return;
+    }
+    if (!"customer".equalsIgnoreCase(String.valueOf(userType))) {
+        response.sendRedirect(request.getContextPath() + "/admin/index.jsp");
+        return;
+    }
+    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    response.setHeader("Pragma", "no-cache");
+    response.setDateHeader("Expires", 0);
+    String displayName = (String) session.getAttribute("displayName");
+    if (displayName == null) displayName = (String) session.getAttribute("email");
+    String ctx = request.getContextPath();
+    String flash      = (String) session.getAttribute("flash");
+    String flashError = (String) session.getAttribute("flashError");
+    if (flash != null)      session.removeAttribute("flash");
+    if (flashError != null) session.removeAttribute("flashError");
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Grocery App</title>
+<link rel="stylesheet" href="<%= ctx %>/css/style.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand"><a href="<%= ctx %>/customer/index.jsp">Grocery&nbsp;App</a></div>
+    <nav>
+        <a href="<%= ctx %>/customer/index.jsp">Home</a>
+        <a href="<%= ctx %>/customer/catalog">Catalog</a>
+        <a href="<%= ctx %>/customer/wishlist">Cart / Wishlist</a>
+        <a href="<%= ctx %>/customer/orderHistory">My Orders</a>
+        <a href="<%= ctx %>/customer/profile">Profile</a>
+    </nav>
+    <div class="user">
+        <span>Hi, <%= displayName %></span>
+        <a class="btn-secondary" href="<%= ctx %>/logout">Logout</a>
+    </div>
+</header>
+<main class="container">
+<% if (flash != null) { %>
+    <div class="flash success"><%= flash %></div>
+<% } %>
+<% if (flashError != null) { %>
+    <div class="flash error"><%= flashError %></div>
+<% } %>
