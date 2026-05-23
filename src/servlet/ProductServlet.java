@@ -85,7 +85,9 @@ public class ProductServlet extends HttpServlet {
                     "Product created successfully (id=" + newId + ").");
             req.getRequestDispatcher("/admin/addProduct.jsp")
                .forward(req, resp);
-        } catch (NumberFormatException | IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
+            // NumberFormatException extends IllegalArgumentException, so
+            // bad number inputs from the form land here too.
             req.setAttribute("error", e.getMessage());
             if ("update".equals(action)) {
                 try { req.setAttribute("product", readProduct(req)); }
