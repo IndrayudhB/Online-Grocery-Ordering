@@ -6,10 +6,10 @@ Web Project (no Maven), targeting Apache Tomcat 9.0.71 with SQLite as the
 persistence layer. The codebase follows the **MVC** architecture:
 
 ```
-View         JSPs in WebContent/
-Controller   Servlets in src/servlet/, Filter in src/filter/
-Model        POJOs in src/model/
-Data         DAOs in src/dao/, JDBC helper in src/util/
+View         JSPs in src/main/webapp/
+Controller   Servlets in src/main/java/servlet/, Filter in src/main/java/filter/
+Model        POJOs in src/main/java/model/
+Data         DAOs in src/main/java/dao/, JDBC helper in src/main/java/util/
 ```
 
 ---
@@ -33,30 +33,34 @@ No frameworks, no Maven, no Hibernate, no Spring — pure JDBC + JSP + Servlets.
 ```
 Online-Grocery-Ordering/
 ├── .classpath, .project, .settings/   # Eclipse Dynamic Web Project metadata
-├── src/
-│   ├── dao/         CustomerDAO, LoginDAO, ProductDAO, OrderDAO, WishlistDAO
-│   ├── exception/   InvalidEmailException, DuplicateEmailException, AppException
-│   ├── filter/      AuthFilter   (role-based access control)
-│   ├── model/       Customer, Login, Product, Order, Wishlist
-│   ├── servlet/     RegisterServlet, LoginServlet, LogoutServlet,
-│   │                AddAdminServlet, ProductServlet, BulkUploadServlet,
-│   │                CatalogServlet, WishlistServlet, PlaceOrderServlet,
-│   │                OrderHistoryServlet, ProfileServlet, AccountStatusServlet
-│   └── util/        DatabaseConnection, EmailValidator, PasswordUtil,
-│                    AppContextListener  (creates schema, seeds super-admin)
-└── WebContent/
-    ├── WEB-INF/
-    │   ├── web.xml                 # session, error pages, http-only cookies
-    │   ├── jspf/                   # shared header/footer fragments
-    │   └── lib/                    # drop sqlite-jdbc-3.7.2.jar HERE
-    ├── admin/                      # admin pages (index, addProduct, productInfo, ...)
-    ├── customer/                   # customer pages (catalog, wishlist/cart, ...)
-    ├── css/style.css
-    ├── js/script.js
-    ├── login.jsp, register.jsp
-    ├── error.jsp
-    ├── index.jsp                   # redirects to /login.jsp
-    └── sample-products.csv         # for bulk-upload demo
+└── src/
+    ├── main/
+    │   ├── java/                      # Java source root (Maven-style layout, no Maven)
+    │   │   ├── dao/         CustomerDAO, LoginDAO, ProductDAO, OrderDAO, WishlistDAO
+    │   │   ├── exception/   InvalidEmailException, DuplicateEmailException, AppException
+    │   │   ├── filter/      AuthFilter   (role-based access control)
+    │   │   ├── model/       Customer, Login, Product, Order, Wishlist
+    │   │   ├── servlet/     RegisterServlet, LoginServlet, LogoutServlet,
+    │   │   │                AddAdminServlet, ProductServlet, BulkUploadServlet,
+    │   │   │                CatalogServlet, WishlistServlet, PlaceOrderServlet,
+    │   │   │                OrderHistoryServlet, ProfileServlet, AccountStatusServlet
+    │   │   └── util/        DatabaseConnection, EmailValidator, PasswordUtil,
+    │   │                    AppContextListener  (creates schema, seeds super-admin)
+    │   └── webapp/                    # Web content root (was WebContent/)
+    │       ├── META-INF/
+    │       │   └── MANIFEST.MF
+    │       ├── WEB-INF/
+    │       │   ├── web.xml            # session, error pages, http-only cookies, db.path
+    │       │   ├── jspf/              # shared header/footer fragments
+    │       │   └── lib/               # drop sqlite-jdbc-3.7.2.jar HERE
+    │       ├── admin/                 # admin pages (index, addProduct, productInfo, ...)
+    │       ├── customer/              # customer pages (catalog, wishlist/cart, ...)
+    │       ├── css/style.css
+    │       ├── js/script.js
+    │       ├── login.jsp, register.jsp
+    │       ├── error.jsp
+    │       ├── index.jsp              # redirects to /login.jsp
+    │       └── sample-products.csv    # for bulk-upload demo
 ```
 
 ---
@@ -64,8 +68,9 @@ Online-Grocery-Ordering/
 ## Database schema
 
 Created automatically on first startup by `util.AppContextListener`. The
-SQLite file lives at `WebContent/WEB-INF/grocery.db` once Tomcat exposes
-the exploded webapp.
+SQLite file lives at `src/main/webapp/WEB-INF/grocery.db` once Tomcat exposes
+the exploded webapp (this is the *fallback* path used when no `db.path`
+context-param or `-Dgrocery.db.path=` system property is set).
 
 | Table          | Notes                                                    |
 |----------------|----------------------------------------------------------|
@@ -93,7 +98,7 @@ password: root
 2. **Drop the SQLite driver in place:**
    - Download `sqlite-jdbc-3.7.2.jar` (e.g. from Maven Central:
      `https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.7.2/sqlite-jdbc-3.7.2.jar`)
-   - Copy it into `WebContent/WEB-INF/lib/`.
+   - Copy it into `src/main/webapp/WEB-INF/lib/`.
 
 ### From Eclipse (recommended)
 
@@ -119,17 +124,17 @@ $TOMCAT_HOME/webapps/GroceryApp/
 ├── customer/
 ├── css/, js/
 ├── login.jsp, register.jsp, error.jsp, index.jsp, sample-products.csv
-└── ... (everything else from WebContent/)
+└── ... (everything else from src/main/webapp/)
 ```
 
 Compile sources with the Tomcat `lib/servlet-api.jar` on the classpath:
 
 ```bash
 mkdir -p build/classes
-javac -d build/classes -cp "$TOMCAT_HOME/lib/*" $(find src -name "*.java")
+javac -d build/classes -cp "$TOMCAT_HOME/lib/*" $(find src/main/java -name "*.java")
 cp -r build/classes/* $TOMCAT_HOME/webapps/GroceryApp/WEB-INF/classes/
-cp -r WebContent/* $TOMCAT_HOME/webapps/GroceryApp/
-cp WebContent/WEB-INF/lib/sqlite-jdbc-3.7.2.jar \
+cp -r src/main/webapp/* $TOMCAT_HOME/webapps/GroceryApp/
+cp src/main/webapp/WEB-INF/lib/sqlite-jdbc-3.7.2.jar \
    $TOMCAT_HOME/webapps/GroceryApp/WEB-INF/lib/
 $TOMCAT_HOME/bin/startup.sh
 ```
