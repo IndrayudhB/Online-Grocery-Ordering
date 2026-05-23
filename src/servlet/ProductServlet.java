@@ -60,7 +60,7 @@ public class ProductServlet extends HttpServlet {
             listAndForward(req, resp);
         } catch (SQLException e) {
             req.setAttribute("error", "Database error: " + e.getMessage());
-            forwardSafely(req, resp);
+            listAndForward(req, resp);
         }
     }
 
@@ -113,18 +113,26 @@ public class ProductServlet extends HttpServlet {
         return p;
     }
 
+    /**
+     * Loads the product list and forwards to productInfo.jsp.
+     *
+     * Catches SQLException internally so callers (especially other
+     * catch blocks) don't need to deal with it. If the load fails,
+     * the JSP renders with a null products list and the existing
+     * "error" request attribute is preserved.
+     */
     private void listAndForward(HttpServletRequest req,
                                 HttpServletResponse resp)
-            throws ServletException, IOException, SQLException {
-        List<Product> products = productDAO.findAll();
-        req.setAttribute("products", products);
-        req.getRequestDispatcher("/admin/productInfo.jsp")
-           .forward(req, resp);
-    }
-
-    private void forwardSafely(HttpServletRequest req,
-                               HttpServletResponse resp)
             throws ServletException, IOException {
+        try {
+            List<Product> products = productDAO.findAll();
+            req.setAttribute("products", products);
+        } catch (SQLException e) {
+            if (req.getAttribute("error") == null) {
+                req.setAttribute("error",
+                        "Database error: " + e.getMessage());
+            }
+        }
         req.getRequestDispatcher("/admin/productInfo.jsp")
            .forward(req, resp);
     }
