@@ -1,0 +1,7 @@
+    </main>
+    <footer class="bottombar">
+        <span>Grocery Ordering App &middot; JSP + Servlets + SQLite</span>
+    </footer>
+    <script src="<%= request.getContextPath() %>/js/script.js"></script>
+</body>
+</html>
