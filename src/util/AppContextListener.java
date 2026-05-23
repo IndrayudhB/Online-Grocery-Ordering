@@ -28,17 +28,38 @@ public class AppContextListener implements ServletContextListener {
     public void contextInitialized(ServletContextEvent sce) {
         ServletContext ctx = sce.getServletContext();
 
-        // Place the DB next to WEB-INF so it persists across redeploys
-        // of the exploded webapp.
-        String webInfPath = ctx.getRealPath("/WEB-INF");
-        if (webInfPath == null) {
-            ctx.log("[GroceryApp] Could not resolve /WEB-INF real path. "
-                    + "Falling back to java.io.tmpdir.");
-            webInfPath = System.getProperty("java.io.tmpdir");
+        // Resolution order for the SQLite database file path:
+        //   1. JVM system property   -Dgrocery.db.path=...
+        //   2. <context-param> "db.path" in web.xml
+        //   3. Default: <webapp>/WEB-INF/grocery.db
+        String dbPath = System.getProperty("grocery.db.path");
+        if (dbPath == null || dbPath.trim().isEmpty()) {
+            dbPath = ctx.getInitParameter("db.path");
         }
-        File dbFile = new File(webInfPath, "grocery.db");
-        DatabaseConnection.setDbPath(dbFile.getAbsolutePath());
-        ctx.log("[GroceryApp] SQLite DB path: " + dbFile.getAbsolutePath());
+        if (dbPath == null || dbPath.trim().isEmpty()) {
+            String webInfPath = ctx.getRealPath("/WEB-INF");
+            if (webInfPath == null) {
+                ctx.log("[GroceryApp] Could not resolve /WEB-INF real path. "
+                        + "Falling back to java.io.tmpdir.");
+                webInfPath = System.getProperty("java.io.tmpdir");
+            }
+            dbPath = new File(webInfPath, "grocery.db").getAbsolutePath();
+        } else {
+            // Make sure the parent directory exists so SQLite can create
+            // the file (otherwise it fails with "unable to open db file").
+            File f = new File(dbPath.trim());
+            File parent = f.getParentFile();
+            if (parent != null && !parent.exists()) {
+                if (!parent.mkdirs()) {
+                    ctx.log("[GroceryApp] Could not create parent dir: "
+                            + parent.getAbsolutePath());
+                }
+            }
+            dbPath = f.getAbsolutePath();
+        }
+
+        DatabaseConnection.setDbPath(dbPath);
+        ctx.log("[GroceryApp] SQLite DB path: " + dbPath);
 
         try {
             createSchema();

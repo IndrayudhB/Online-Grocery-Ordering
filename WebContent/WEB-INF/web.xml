@@ -7,6 +7,20 @@
 
 	<display-name>GroceryApp</display-name>
 
+	<!--
+		SQLite database file location.
+
+		If you remove or comment out this <context-param>, the app will fall
+		back to <webapp>/WEB-INF/grocery.db (the default).
+
+		On Windows, forward slashes work fine and avoid escaping headaches:
+			<param-value>C:/Users/2873120/MySQLiteDB</param-value>
+	-->
+	<context-param>
+		<param-name>db.path</param-name>
+		<param-value>C:/Users/2873120/MySQLiteDB</param-value>
+	</context-param>
+
 	<welcome-file-list>
 		<welcome-file>index.jsp</welcome-file>
 	</welcome-file-list>
