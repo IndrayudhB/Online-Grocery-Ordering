@@ -22,9 +22,14 @@ import model.Wishlist;
 import util.DatabaseConnection;
 
 /**
- * US008 — Place Order. Converts the current user's wishlist into one or
- * more rows in {@code grocery_order}, decrements stock atomically, and
- * clears the wishlist.
+ * US008 - Place Order. Validates the dummy payment details submitted
+ * by the payment page, then converts the current user's wishlist into
+ * one or more rows in {@code grocery_order}, decrements stock atomically,
+ * and clears the wishlist.
+ *
+ * Payment processing here is intentionally fake - no real gateway call
+ * is made. The point of the validation is only to keep the demo flow
+ * realistic (UPI ID format, 16-digit card number, etc.).
  */
 @WebServlet("/customer/placeOrder")
 public class PlaceOrderServlet extends HttpServlet {
@@ -43,6 +48,15 @@ public class PlaceOrderServlet extends HttpServlet {
             return;
         }
 
+        // 1. Validate the (dummy) payment details. If anything is wrong,
+        //    bounce the user back to the payment page with a flash error.
+        String methodLabel = validatePayment(req, session);
+        if (methodLabel == null) {
+            resp.sendRedirect(req.getContextPath() + "/customer/checkout");
+            return;
+        }
+
+        // 2. Now do the actual order placement.
         try {
             List<Wishlist> items = wishlistDAO.findByUser(loginId);
             if (items.isEmpty()) {
@@ -53,7 +67,8 @@ public class PlaceOrderServlet extends HttpServlet {
                 return;
             }
 
-            // Stock check first, before opening a transaction.
+            // Stock re-check (cart may have changed since the payment
+            // page loaded).
             for (Wishlist w : items) {
                 if (w.getQuantity() > w.getStockAvailability()) {
                     session.setAttribute("flashError",
@@ -74,7 +89,6 @@ public class PlaceOrderServlet extends HttpServlet {
                             "yyyy-MM-dd HH:mm:ss").format(new Date());
 
                     for (Wishlist w : items) {
-                        // Insert order row
                         try (java.sql.PreparedStatement ps =
                                 conn.prepareStatement(
                                   "INSERT INTO grocery_order "
@@ -119,6 +133,7 @@ public class PlaceOrderServlet extends HttpServlet {
                 placed.add(o);
             }
             session.setAttribute("lastOrder", placed);
+            session.setAttribute("paymentMethod", methodLabel);
             resp.sendRedirect(req.getContextPath()
                     + "/customer/orderConfirmation.jsp");
         } catch (SQLException e) {
@@ -126,5 +141,71 @@ public class PlaceOrderServlet extends HttpServlet {
                     "Order failed: " + e.getMessage());
             resp.sendRedirect(req.getContextPath() + "/customer/wishlist");
         }
+    }
+
+    /**
+     * Performs lightweight validation on the chosen payment method.
+     * Returns a human-readable label (e.g. "UPI (alice@okhdfc)") on
+     * success, or {@code null} after setting a flash error on failure.
+     */
+    private String validatePayment(HttpServletRequest req,
+                                   HttpSession session) {
+        String method = trim(req.getParameter("paymentMethod"));
+        if (method == null || method.isEmpty()) {
+            session.setAttribute("flashError",
+                    "Please choose a payment method.");
+            return null;
+        }
+        switch (method.toLowerCase()) {
+            case "cod":
+                return "Cash on Delivery";
+            case "upi": {
+                String upi = trim(req.getParameter("upiId"));
+                if (upi == null
+                        || !upi.matches("^[A-Za-z0-9._-]+@[A-Za-z]+$")) {
+                    session.setAttribute("flashError",
+                            "Please enter a valid UPI ID like name@bank.");
+                    return null;
+                }
+                return "UPI (" + upi + ")";
+            }
+            case "card": {
+                String num = trim(req.getParameter("cardNumber"));
+                String cvv = trim(req.getParameter("cardCvv"));
+                String exp = trim(req.getParameter("cardExpiry"));
+                if (num == null) {
+                    session.setAttribute("flashError",
+                            "Card number is required.");
+                    return null;
+                }
+                String numClean = num.replaceAll("\\s", "");
+                if (!numClean.matches("^\\d{16}$")) {
+                    session.setAttribute("flashError",
+                            "Card number must be 16 digits.");
+                    return null;
+                }
+                if (cvv == null || !cvv.matches("^\\d{3,4}$")) {
+                    session.setAttribute("flashError",
+                            "CVV must be 3 or 4 digits.");
+                    return null;
+                }
+                if (exp == null
+                        || !exp.matches("^(0[1-9]|1[0-2])/\\d{2}$")) {
+                    session.setAttribute("flashError",
+                            "Expiry must be in MM/YY format.");
+                    return null;
+                }
+                String last4 = numClean.substring(12);
+                return "Card ending **** " + last4;
+            }
+            default:
+                session.setAttribute("flashError",
+                        "Unknown payment method.");
+                return null;
+        }
+    }
+
+    private static String trim(String s) {
+        return s == null ? null : s.trim();
     }
 }

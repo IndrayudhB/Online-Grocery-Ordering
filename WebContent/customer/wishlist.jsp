@@ -66,9 +66,10 @@
             </tfoot>
         </table>
 
-        <form method="post" action="<%= ctx %>/customer/placeOrder"
-              onsubmit="return confirm('Place this order?');">
-            <button type="submit" class="btn-primary">Place Order</button>
+        <form method="post" action="<%= ctx %>/customer/checkout">
+            <button type="submit" class="btn-primary">
+                Proceed to Payment &rarr;
+            </button>
         </form>
     <% } %>
 </section>

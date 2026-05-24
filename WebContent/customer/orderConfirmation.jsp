@@ -2,16 +2,28 @@
 <%@ page import="java.util.List, model.Order" %>
 <%
     List<Order> placed = (List<Order>) session.getAttribute("lastOrder");
-    if (placed != null) session.removeAttribute("lastOrder");
+    String paymentMethod = (String) session.getAttribute("paymentMethod");
+    if (placed != null)        session.removeAttribute("lastOrder");
+    if (paymentMethod != null) session.removeAttribute("paymentMethod");
 %>
 
 <section class="card">
-    <h2>Order placed successfully</h2>
+    <h2>&#10003; Order placed successfully</h2>
     <% if (placed == null || placed.isEmpty()) { %>
         <p>No order summary available.
             <a href="<%= ctx %>/customer/catalog">Continue shopping</a>.</p>
     <% } else { %>
         <p class="muted">Your order has been recorded. Below are the details:</p>
+        <% if (paymentMethod != null) { %>
+            <p>
+                <strong>Payment method:</strong> <%= paymentMethod %>
+                <% if ("Cash on Delivery".equals(paymentMethod)) { %>
+                    &mdash; pay on delivery.
+                <% } else { %>
+                    &mdash; payment confirmed (demo).
+                <% } %>
+            </p>
+        <% } %>
         <table class="data">
             <thead>
                 <tr>
