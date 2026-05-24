@@ -13,7 +13,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Sign In — Grocery App</title>
-<link rel="stylesheet" href="<%= ctx %>/css/style.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body class="auth-bg">
 <div class="auth-card">
